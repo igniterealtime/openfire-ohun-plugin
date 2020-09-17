@@ -1,9 +1,9 @@
-# Ohùn Plugin for openfire
+# OhÃ¹n Plugin for openfire
 
 Ohun is the Yoruba word for voice and is a simple audio conferencing solution for Openfire using the Kraken WebRTC [server](https://github.com/MixinNetwork/kraken) and [client](https://github.com/MixinNetwork/kraken.fm). 
 It is for remote teams who will use it everyday to communicate and collaborate all day long without the need to show their faces or any other video. With the absence of video, it ensures high quality audio for the conversation at most times, even with more than 10 participants.
 
-<img src="https://github.com/igniterealtime/openfire-ohun-plugin/raw/master/ohun.png" />
+<img width="25%" src="https://github.com/igniterealtime/openfire-ohun-plugin/raw/master/ohun.png" />
 
 ## Installation
 
