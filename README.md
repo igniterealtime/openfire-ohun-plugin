@@ -2,11 +2,11 @@
 
 <table><tr>
 <td>
-<p>Ohùn is the Yoruba word for voice and is a simple audio conferencing solution for Openfire using the Kraken WebRTC [server](https://github.com/MixinNetwork/kraken) and [client](https://github.com/MixinNetwork/kraken.fm). </p>
+<p>Ohùn is the Yoruba word for voice and is a simple audio conferencing solution for Openfire using the Kraken WebRTC <a href=https://github.com/MixinNetwork/kraken>client</a> and <a href=https://github.com/MixinNetwork/kraken.fm>server</a>.</p>
 
 <p>It is for remote teams who will use it everyday to communicate and collaborate all day long without the need to show their faces or any other video. With the absence of video, it ensures high quality audio for the conversation at most times, even with more than 10 participants.</p>
 </td>
-<td><img width="50%" src="https://github.com/igniterealtime/openfire-ohun-plugin/raw/master/ohun.png" /></td>
+<td><img width="40%" src="https://github.com/igniterealtime/openfire-ohun-plugin/raw/master/ohun.png" /></td>
 </tr></table>
 
 ## Installation
