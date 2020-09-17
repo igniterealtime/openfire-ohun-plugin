@@ -6,7 +6,7 @@
 
 <p>It is for remote teams who will use it everyday to communicate and collaborate all day long without the need to show their faces or any other video. With the absence of video, it ensures high quality audio for the conversation at most times, even with more than 10 participants.</p>
 </td>
-<td><img width="40%" src="https://github.com/igniterealtime/openfire-ohun-plugin/raw/master/ohun.png" /></td>
+<td><img width="70%" src="https://github.com/igniterealtime/openfire-ohun-plugin/raw/master/ohun.png" /></td>
 </tr></table>
 
 ## Installation
@@ -14,9 +14,14 @@
 - Copy the [ohun.jar](https://github.com/igniterealtime/openfire-ohun-plugin/releases/download/v0.0.1/ohun.jar) file to the OPENFIRE_HOME/plugins directory.
 - Configure the admin properties page.
 
+<img src=https://user-images.githubusercontent.com/110731/93486376-0787aa80-f8fc-11ea-8c73-e1fb622fe157.png />
+
+
 ## Configuration
 
 Under Server/Media settings -> Audio-Conf Settings tab you can configure the parameters.
+
+<img src=https://user-images.githubusercontent.com/110731/93486413-12dad600-f8fc-11ea-9933-b3fa3043aaf8.png />
 
 ## Known Issues
 
