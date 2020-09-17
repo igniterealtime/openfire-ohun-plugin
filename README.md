@@ -8,7 +8,7 @@ It is for remote teams who will use it everyday to communicate and collaborate a
 
 ## Installation
 
-- Copy the ohun.jar file to the OPENFIRE_HOME/plugins directory.
+- Copy the [ohun.jar](https://github.com/igniterealtime/openfire-ohun-plugin/releases/download/v0.0.1/ohun.jar) file to the OPENFIRE_HOME/plugins directory.
 - Configure the admin properties page.
 
 ## Configuration
