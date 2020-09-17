@@ -1,0 +1,16 @@
+[engine]
+# the network interface to bind
+interface = "eth0"
+log-level = 10
+# address = "172.17.0.11"
+
+# the UDP port range, leave them to 0 for default strategy
+port-min = 26001
+port-max = 27000
+
+[turn]
+host = ""
+secret = ""
+
+[rpc]
+port = 7000

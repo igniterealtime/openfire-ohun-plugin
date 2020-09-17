@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<plugin>
+    <author>Ignite Realtime</author>
+    <class>org.ifsoft.ohun.openfire.Ohun</class>
+    <name>${project.name}</name>
+    <description>${project.description}</description>
+    <version>${project.version}</version>
+    <licenseType>Apache 2.0</licenseType>
+    <date>09/11/2020</date>
+    <minServerVersion>4.0.0</minServerVersion>
+
+   <adminconsole>
+        <tab id="sidebar-media-services">
+            <item id="ohun-summary" name="${config.page.summary.title}" description="${config.page.summary.description}" url="ohun-summary.jsp"/>            
+            <item id="ohun-settings" name="${config.page.settings.title}" description="${config.page.settings.description}" url="ohun-settings.jsp"/>
+        </tab>      
+    </adminconsole> 
+</plugin>
