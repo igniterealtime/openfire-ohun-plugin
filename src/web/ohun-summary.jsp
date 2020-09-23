@@ -123,9 +123,7 @@
     int i = 0;
     
     for (MUCRoom chatRoom : rooms)     
-    {
-        i++;
-        
+    {        
         body = "{\"id\": \"ohun_detail_" + i + "\", \"method\": \"list\", \"params\": [\"" + chatRoom.getName() + "\"]}";
         entity = new ByteArrayEntity(body.getBytes("UTF-8"));
         post.setEntity(entity);
@@ -141,6 +139,7 @@
         
         if (peers.length() > 0)
         {
+            i++;        
 %>
             <tr class="jive-<%= (((i%2)==0) ? "even" : "odd") %>">
                 <td width="1%">

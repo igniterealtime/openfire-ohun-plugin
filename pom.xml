@@ -7,12 +7,12 @@
     <parent>
         <artifactId>plugins</artifactId>
         <groupId>org.igniterealtime.openfire</groupId>
-        <version>4.5.1</version>
+        <version>4.5.3</version>
     </parent>
     
     <groupId>org.igniterealtime.openfire</groupId>
     <artifactId>ohun</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.2-SNAPSHOT</version>
 
     <name>Ohun</name>
     <description>Simple group audio conferencing plugin for Openfire</description>

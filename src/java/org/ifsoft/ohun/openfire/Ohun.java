@@ -16,7 +16,7 @@
 
 package org.ifsoft.ohun.openfire;
 
-import java.io.File;
+import java.io.*;
 import java.net.*;
 import java.util.concurrent.*;
 import java.util.*;
@@ -39,6 +39,16 @@ import org.jivesoftware.util.JiveGlobals;
 import org.jivesoftware.util.PropertyEventDispatcher;
 import org.jivesoftware.util.PropertyEventListener;
 
+import org.apache.http.*;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+
+import org.apache.tomcat.InstanceManager;
+import org.apache.tomcat.SimpleInstanceManager;
+
 import org.eclipse.jetty.apache.jsp.JettyJasperInitializer;
 import org.eclipse.jetty.plus.annotation.ContainerInitializer;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
@@ -51,8 +61,6 @@ import org.eclipse.jetty.util.security.*;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.*;
 
-import org.apache.tomcat.InstanceManager;
-import org.apache.tomcat.SimpleInstanceManager;
 import org.eclipse.jetty.util.security.*;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.*;
@@ -63,7 +71,7 @@ import java.util.*;
 import org.jitsi.util.OSUtils;
 import de.mxro.process.*;
 import org.xmpp.packet.*;
-
+import org.dom4j.*;
 
 public class Ohun implements Plugin, PropertyEventListener, ProcessListener, MUCEventListener
 {
@@ -293,7 +301,50 @@ public class Ohun implements Plugin, PropertyEventListener, ProcessListener, MUC
 
     public void messageReceived(JID roomJID, JID user, String nickname, Message message)
     {
+        Element childElement = message.getChildElement("json", "urn:xmpp:json:0");
 
+        if (childElement != null && childElement.attribute("type").getStringValue().equals("request"))
+        {
+            String payload = childElement.getText();
+            Log.debug("ohun message " + message.getFrom() + "\n" + payload);
+
+            try
+            {
+                HttpClient client = new DefaultHttpClient();
+                HttpPost post = new HttpPost("http://" + JiveGlobals.getProperty("ohun.ipaddr", "127.0.0.1") + ":" + JiveGlobals.getProperty("ohun.port", "7000"));
+
+                post.setHeader("Content-Type", "application/json");
+                HttpEntity entity = new ByteArrayEntity(payload.getBytes("UTF-8"));
+                post.setEntity(entity);
+
+                HttpResponse response = client.execute(post);
+                BufferedReader rd = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
+
+                String json = "";
+                String line;
+
+                while ((line = rd.readLine()) != null) {
+                   json = json + line;
+                }
+
+                if (!"".equals(json))
+                {
+                    MultiUserChatService mucService = XMPPServer.getInstance().getMultiUserChatManager().getMultiUserChatService("conference");
+                    MUCRoom room = mucService.getChatRoom(roomJID.getNode());
+
+                    Message notification = new Message();
+                    notification.setFrom(roomJID + "/" + nickname);
+                    Element ohun = notification.addChildElement("json", "urn:xmpp:json:0");
+                    ohun.setText(json);
+                    ohun.addAttribute("jid", user.toString());
+                    ohun.addAttribute("type", "response");
+                    room.send(notification);
+                }
+
+            } catch (Exception e) {
+                Log.error("messageReceived error", e);
+            }
+        }
     }
 
     public void roomSubjectChanged(JID roomJID, JID user, String newSubject)
