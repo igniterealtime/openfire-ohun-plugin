@@ -1,4 +1,4 @@
-var xpc = null, creds = {};
+var xpc = null, creds = {}, candidates = [], username;
 
 window.onload = function() {
   var Base64 = {
@@ -169,9 +169,10 @@ window.onload = function() {
     return;
   }
 
-  var name = localStorage.getItem(rname+':'+uid);
+  var name = username = localStorage.getItem(rname+':'+uid);
   if (!name || name === '') {
     document.getElementById('form').style.display = 'block';
+
     document.getElementById('name-submit').onclick = function () {
       var val = document.querySelector('input[name="name"]').value;
       if (!val || val.trim() === '') {
@@ -188,7 +189,7 @@ window.onload = function() {
   uname = uid + ':' + Base64.encode(name);
 
   const rnameRPC = encodeURIComponent(rname);
-  const unameRPC = encodeURIComponent(uname);
+  let unameRPC = encodeURIComponent(btoa(JSON.stringify({room: rname + "@conference." + location.hostname, jid: uid, nick: name})));
 
   var ucid = "";
   var visulizers = {};
@@ -240,30 +241,6 @@ window.onload = function() {
 
   const AudioContext = window.AudioContext || window.webkitAudioContext;
   const audioCtx = new AudioContext();
-
-  async function subscribe(pc) {
-    var res = await rpc('subscribe', [rnameRPC, unameRPC, ucid]);
-    console.log("subscribe response", res);
-
-    if (res.error && typeof res.error === 'string' && res.error.indexOf(unameRPC + ' not found in')) {
-      pc.close();
-      window.connection.disconnect();
-      startXMPP();
-      return;
-    }
-    if (res.data && res.data.type === 'offer') {
-      console.log("subscribe offer", res.data);
-      await pc.setRemoteDescription(res.data);
-      var sdp = await pc.createAnswer();
-      await pc.setLocalDescription(sdp);
-      await rpc('answer', [rnameRPC, unameRPC, ucid, JSON.stringify(sdp)]);
-    }
-  }
-
-  function joinMuc()
-  {
-    window.connection.send($pres({to: rname + '@conference.' + location.hostname + '/' + uid}).c("x",{xmlns: Strophe.NS.MUC}));
-  }
 
   function getStunTurn()
   {
@@ -337,6 +314,7 @@ window.onload = function() {
         if (status === Strophe.Status.CONNECTED)
         {
             window.connection.send($pres());
+            window.connection.send($pres({to: rname + '@conference.' + location.hostname + '/' + username}).c("x",{xmlns: Strophe.NS.MUC}));
             getStunTurn();
         }
         else
@@ -347,15 +325,70 @@ window.onload = function() {
         }
     });
 
-    window.connection.addHandler(function (presence)
+    window.connection.addHandler(function (message)
     {
-        const from = Strophe.getResourceFromJid(presence.getAttribute("from"));
-        const leave = presence.getAttribute("type") == "unavailable";
-        console.log("XMPP Presence", from, uid, leave);
-        if (uid != from && !leave) subscribe(xpc);
+        const json_ele = message.querySelector("json");
+        const json = JSON.parse(json_ele.innerHTML);
+
+        const id = Strophe.getBareJidFromJid(json_ele.getAttribute("jid"));
+        const json_type = json_ele.getAttribute("type");
+        if (json_type != "response") return true;
+
+        const room = rname + '@conference.' + location.hostname;
+        console.log("Ohun Message", json_type, id, json.id, json);
+
+        async function handleAnswer(json)
+        {
+            console.log("handleAnswer", json);
+            ucid = json.data.track;
+            await xpc.setRemoteDescription(json.data.sdp);
+
+            if (candidates)
+            {
+                for (let i=0; i<candidates.length; i++)
+                {
+                    console.log("handleAnswer - candidate", candidates[i]);
+                    const body = JSON.stringify({id: room, method: 'trickle', params: [rnameRPC, unameRPC, ucid, JSON.stringify(candidates[i])]});
+                    window.connection.send($msg({type: 'groupchat', to: room}).c("json",{xmlns: "urn:xmpp:json:0", type: "request"}).t(body));
+                }
+            }
+        }
+
+        function subscribe()
+        {
+            console.log("listenForOhunEvents - subscribe", room);
+            const body = JSON.stringify({id: room, method: 'subscribe', params: [rnameRPC, unameRPC, ucid]})
+            window.connection.send($msg({type: 'groupchat', to: room}).c("json",{xmlns: "urn:xmpp:json:0", type: "request"}).t(body));
+        }
+
+        async function handleOffer(json)
+        {
+            console.log("handleOffer", json);
+            await xpc.setRemoteDescription(json.data);
+            var sdp = await xpc.createAnswer();
+            await xpc.setLocalDescription(sdp);
+            const body = JSON.stringify({id: room, method: 'answer', params: [rnameRPC, unameRPC, ucid, JSON.stringify(sdp)]});
+            window.connection.send($msg({type: 'groupchat', to: room}).c("json",{xmlns: "urn:xmpp:json:0", type: "request"}).t(body));
+        }
+
+        if (json.data && json.data.sdp)
+        {
+            if (json.data.sdp.type === 'answer')
+            {
+                if (uid == id) handleAnswer(json);
+                setTimeout(subscribe, 1000);
+            }
+            else
+
+            if (json.data.type === 'offer' && uid == id)
+            {
+                handleOffer(json);
+            }
+        }
+
         return true;
 
-    }, null, 'presence');
+    }, "urn:xmpp:json:0", 'message');
   }
 
   async function init() {
@@ -380,7 +413,14 @@ window.onload = function() {
     }
 
     creds = await getCreds();
-    console.log("credentials", creds);
+
+    if (creds.username && creds.username != "")
+    {
+        uid = creds.username + "@" + location.hostname;
+        unameRPC = encodeURIComponent(btoa(JSON.stringify({room: rname + "@conference." + location.hostname, jid: uid, nick: name})));
+    }
+
+    console.log("credentials", creds.username, uid);
     startXMPP();
   }
 
@@ -397,17 +437,30 @@ window.onload = function() {
 
       pc.onicecandidate = ({candidate}) => {
         console.log("candidate", candidate);
-        rpc('trickle', [rnameRPC, unameRPC, ucid, JSON.stringify(candidate)]);
+
+        if (candidate)
+        {
+            if (ucid)
+            {
+                const room = rname + '@conference.' + location.hostname;
+                const body = JSON.stringify({id: room, method: 'trickle', params: [rnameRPC, unameRPC, ucid, JSON.stringify(candidate)]});
+                window.connection.send($msg({type: 'groupchat', to: room}).c("json",{xmlns: "urn:xmpp:json:0", type: "request"}).t(body));
+            }
+            else {
+                candidates.push(candidate);
+            }
+        }
       };
 
       pc.ontrack = (event) => {
         console.log("ontrack", event);
 
         var stream = event.streams[0];
-        var sid = decodeURIComponent(stream.id);
-        var id = sid.split(':')[0];
-        var name = Base64.decode(sid.split(':')[1]);
+        var sid = JSON.parse(atob(decodeURIComponent(stream.id)));
+        const name = sid.nick;
+        const id = sid.jid;
         console.log(id, uid);
+
         if (id === uid) {
           return;
         }
@@ -455,13 +508,10 @@ window.onload = function() {
         pc.addTrack(track, stream);
       });
       await pc.setLocalDescription(await pc.createOffer());
+      const room = rname + '@conference.' + location.hostname;
+      const body = JSON.stringify({id: room, method: 'publish', params: [rnameRPC, unameRPC, JSON.stringify(pc.localDescription)]})
+      window.connection.send($msg({type: 'groupchat', to: room}).c("json",{xmlns: "urn:xmpp:json:0", type: "request"}).t(body));
 
-      var res = await rpc('publish', [rnameRPC, unameRPC, JSON.stringify(pc.localDescription)]);
-      if (res.data && res.data.sdp.type === 'answer') {
-        await pc.setRemoteDescription(res.data.sdp);
-        ucid = res.data.track;
-        setTimeout(joinMuc, 3000);
-      }
     } catch (err) {
       console.error(err);
     }
@@ -603,26 +653,6 @@ window.onload = function() {
     };
 
     draw();
-  }
-
-  async function rpc(method, params = []) {
-    try {
-      const response = await fetch(location.protocol + '//' + location.host + '/ohun/kraken', {
-        method: 'POST',
-        mode: 'cors',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        redirect: 'follow', // manual, *follow, error
-        referrerPolicy: 'no-referrer', // no-referrer, *client
-        body: JSON.stringify({id: uuidv4(), method: method, params: params}) // body data type must match "Content-Type" header
-      });
-      return response.json(); // parses JSON response into native JavaScript objects
-    } catch (err) {
-      console.log('fetch error', method, params, err);
-      return await rpc(method, params);
-    }
   }
 
   function uuidv4() {
