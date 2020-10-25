@@ -45,10 +45,6 @@ import org.eclipse.jetty.util.security.*;
 import org.eclipse.jetty.security.*;
 import org.eclipse.jetty.security.authentication.*;
 
-import org.eclipse.jetty.util.security.*;
-import org.eclipse.jetty.security.*;
-import org.eclipse.jetty.security.authentication.*;
-
 import java.lang.reflect.*;
 import java.util.*;
 
