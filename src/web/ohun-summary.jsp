@@ -69,8 +69,14 @@
     int active_peers = summary.getInt("active_peers");      
     int closed_peers = summary.getInt("closed_peers");
     int active_rooms = summary.getInt("active_rooms");          
-    int closed_rooms = summary.getInt("closed_rooms");           
+    int closed_rooms = summary.getInt("closed_rooms"); 
+    String service_url = "https://" + XMPPServer.getInstance().getServerInfo().getHostname() + ":" + JiveGlobals.getProperty("httpbind.port.secure", "7443") + "/ohun/my_room_name";
+
 %>
+    <p>
+        <fmt:message key="config.page.connectivity.description" />&nbsp;<a target="_blank" href="<%= service_url %>"><%= service_url %></a>
+    </p>    
+
     <div class="jive-table">
     <table cellpadding="0" cellspacing="0" border="0" width="100%">
     <thead>

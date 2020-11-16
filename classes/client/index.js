@@ -168,15 +168,13 @@ window.onload = function() {
 
   function startXMPP()
   {
-    const protocol = (location.protocol.startsWith("https")) ? "wss:" : "ws:";
-    window.connection = new Strophe.Connection(protocol + "//" + location.host + "/ws/");
-
+    window.connection = new Strophe.Connection(creds.conUrl);
     const jid = creds.username ? creds.username + "@" + location.hostname : location.hostname;
     const password = creds.password ? creds.password : null;
 
     window.connection.connect(jid, password, function (status)
     {
-        console.log("XMPPConnection.connect", status);
+        console.debug("XMPPConnection.connect", status);
 
         if (status === Strophe.Status.CONNECTED)
         {
@@ -205,11 +203,11 @@ window.onload = function() {
         if (json_type != "response") return true;
 
         const room = rname + '@conference.' + location.hostname;
-        console.log("Ohun Message", json_type, id, json.id, json);
+        console.debug("Ohun Message", json_type, id, json.id, json);
 
         async function handleAnswer(json)
         {
-            console.log("handleAnswer", json);
+            console.debug("handleAnswer", json);
             ucid = json.data.track;
             await xpc.setRemoteDescription(json.data.sdp);
 
@@ -217,7 +215,7 @@ window.onload = function() {
             {
                 for (let i=0; i<candidates.length; i++)
                 {
-                    console.log("handleAnswer - candidate", candidates[i]);
+                    console.debug("handleAnswer - candidate", candidates[i]);
                     const body = JSON.stringify({id: room, method: 'trickle', params: [rnameRPC, unameRPC, ucid, JSON.stringify(candidates[i])]});
                     window.connection.send($msg({type: 'groupchat', to: room}).c("json",{xmlns: "urn:xmpp:json:0", type: "request"}).t(body));
                 }
@@ -226,14 +224,14 @@ window.onload = function() {
 
         function subscribe()
         {
-            console.log("listenForOhunEvents - subscribe", room);
+            console.debug("listenForOhunEvents - subscribe", room);
             const body = JSON.stringify({id: room, method: 'subscribe', params: [rnameRPC, unameRPC, ucid]})
             window.connection.send($msg({type: 'groupchat', to: room}).c("json",{xmlns: "urn:xmpp:json:0", type: "request"}).t(body));
         }
 
         async function handleOffer(json)
         {
-            console.log("handleOffer", json);
+            console.debug("handleOffer", json);
             await xpc.setRemoteDescription(json.data);
             var sdp = await xpc.createAnswer();
             await xpc.setLocalDescription(sdp);
@@ -278,11 +276,23 @@ window.onload = function() {
           });
           return response.json();
         } catch (err) {
-          console.log('init fetch error', err);
+          console.debug('init fetch error', err);
+          return {};
+        }
+    }
+
+    async function getConUrl()
+    {
+        try {
+          const response = await fetch(location.protocol + '//' + location.host + '/.well-known/host-meta', {method: 'GET'});
+          return response.text();
+        } catch (err) {
+          console.debug('init fetch error', err);
         }
     }
 
     creds = await getCreds();
+    creds.conUrl = (location.protocol.startsWith("https") ? "wss:" : "ws:") + "//" + location.host + "/ws/";
 
     if (creds.username && creds.username != "")
     {
@@ -290,7 +300,19 @@ window.onload = function() {
         unameRPC = encodeURIComponent(btoa(JSON.stringify({room: rname + "@conference." + location.hostname, jid: uid, nick: name})));
     }
 
-    console.log("credentials", creds.username, uid);
+    const xml = await getConUrl();
+    const conUrlElem = new DOMParser().parseFromString(xml, "text/xml").documentElement;
+
+    if (conUrlElem != null)
+    {
+       boshElem = conUrlElem.querySelector('Link[rel="urn:xmpp:alt-connections:xbosh"]');
+       if (boshElem) creds.conUrl = boshElem.getAttribute('href');
+
+       wsElem = conUrlElem.querySelector('Link[rel="urn:xmpp:alt-connections:websocket"]');
+       if (wsElem) creds.conUrl = wsElem.getAttribute('href');
+    }
+
+    console.debug("credentials", creds, uid, conUrlElem);
     startXMPP();
   }
 
@@ -306,7 +328,7 @@ window.onload = function() {
       pc.createDataChannel('useless'); // FIXME remove this line
 
       pc.onicecandidate = ({candidate}) => {
-        console.log("candidate", candidate);
+        console.debug("candidate", candidate);
 
         if (candidate)
         {
@@ -323,20 +345,20 @@ window.onload = function() {
       };
 
       pc.ontrack = (event) => {
-        console.log("ontrack", event);
+        console.debug("ontrack", event);
 
         var stream = event.streams[0];
         var sid = JSON.parse(atob(decodeURIComponent(stream.id)));
         const name = sid.nick;
         const id = sid.jid;
-        console.log(id, uid);
+        console.debug(id, uid);
 
         if (id === uid) {
           return;
         }
 
         event.track.onmute = (event) => {
-          console.log("onmute", event);
+          console.debug("onmute", event);
           var el = document.querySelector(`[data-track-id="${event.target.id}"]`);
           if (el) {
             el.remove();
