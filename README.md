@@ -36,3 +36,12 @@ Refresh home page to get a random and anonymous [room-id] each time
 You will need a turn server if your Openfire is running inside a container like Docker or behind a NAT. Use the [PionTurn](https://github.com/igniterealtime/openfire-pionturn-plugin/releases) plugin for Openfire or Coturn (linux only). 
 
 If you use a turn server then also use the [external service discovery](https://github.com/igniterealtime/openfire-externalservicediscovery-plugin) plugin for openfire in order for the web client to discover it.
+
+## CI Build Status
+
+[![Build Status](https://github.com/igniterealtime/openfire-ohun-plugin/workflows/Java%20CI/badge.svg)](https://github.com/igniterealtime/openfire-ohun-plugin/actions)
+
+## Reporting Issues
+
+Issues may be reported to the [forums](https://discourse.igniterealtime.org) or via this repo's [Github Issues](https://github.com/igniterealtime/openfire-ohun-plugin).
+
