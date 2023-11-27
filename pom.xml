@@ -12,7 +12,7 @@
     
     <groupId>org.igniterealtime.openfire</groupId>
     <artifactId>ohun</artifactId>
-    <version>0.0.3-SNAPSOT</version>
+    <version>0.0.3</version>
 
     <name>Ohun</name>
     <description>Simple group audio conferencing plugin for Openfire</description>
